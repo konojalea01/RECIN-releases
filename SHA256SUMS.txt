@@ -1,1 +1,1 @@
-66fac2af021eed0436f516c790e45aec1dd34e06bf40ffa47738163ba88eba72  RECIN-0.2.0-windows-amd64-installer.exe
+f59ff0eda7064fb715ef714c21dca5b42766624d8d776dddd5fab341bd8ca57c  RECIN-0.2.1-windows-amd64-installer.exe
