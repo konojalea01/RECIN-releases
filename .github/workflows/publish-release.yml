@@ -1,0 +1,58 @@
+name: Publish public release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - latest.json
+      - RECIN-windows-amd64-installer.exe
+      - SHA256SUMS.txt
+      - .github/workflows/publish-release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout update channel
+        uses: actions/checkout@v5
+
+      - name: Read release version
+        shell: bash
+        run: |
+          VERSION="$(jq -r '.version' latest.json)"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version in latest.json: $VERSION" >&2
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TAG=v$VERSION" >> "$GITHUB_ENV"
+
+      - name: Prepare versioned installer
+        shell: bash
+        run: |
+          cp RECIN-windows-amd64-installer.exe "RECIN-${VERSION}-windows-amd64-installer.exe"
+
+      - name: Create or update public GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" \
+              "RECIN-${VERSION}-windows-amd64-installer.exe" \
+              SHA256SUMS.txt \
+              --clobber
+            gh release edit "$TAG" --latest --title "RECIN $VERSION"
+          else
+            gh release create "$TAG" \
+              "RECIN-${VERSION}-windows-amd64-installer.exe" \
+              SHA256SUMS.txt \
+              --title "RECIN $VERSION" \
+              --notes "Instalador público de RECIN $VERSION para Windows x64." \
+              --latest
+          fi
